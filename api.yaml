@@ -1,0 +1,214 @@
+openapi: 3.0.0
+info:
+  title: Plantation Management API
+  description: API for plantation management and drone patrol planning
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+paths:
+  /estate:
+    post:
+      summary: Create a new estate
+      operationId: createEstate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EstateRequest'
+      responses:
+        '201':
+          description: Estate created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstateResponse'
+        '400':
+          description: Bad request due to invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /estate/{id}/tree:
+    post:
+      summary: Add a tree to an estate
+      operationId: createTree
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TreeRequest'
+      responses:
+        '201':
+          description: Tree added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TreeResponse'
+        '400':
+          description: Bad request due to invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Estate not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /estate/{id}/stats:
+    get:
+      summary: Get stats about trees in an estate
+      operationId: getEstateStats
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Estate stats retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatsResponse'
+        '404':
+          description: Estate not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /estate/{id}/drone-plan:
+    get:
+      summary: Get drone monitoring travel plan
+      operationId: getDronePlan
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: max_distance
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+      responses:
+        '200':
+          description: Drone plan retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DronePlanResponse'
+        '400':
+          description: Bad request due to invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Estate not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    EstateRequest:
+      type: object
+      required:
+        - width
+        - length
+      properties:
+        width:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 50000
+        length:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 50000
+    EstateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+    TreeRequest:
+      type: object
+      required:
+        - x
+        - y
+        - height
+      properties:
+        x:
+          type: integer
+          format: int32
+          minimum: 1
+        y:
+          type: integer
+          format: int32
+          minimum: 1
+        height:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 30
+    TreeResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+    StatsResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+          format: int32
+        max_height:
+          type: integer
+          format: int32
+        min_height:
+          type: integer
+          format: int32
+        median_height:
+          type: integer
+          format: int32
+    DronePlanResponse:
+      type: object
+      properties:
+        distance:
+          type: integer
+          format: int32
+        rest:
+          type: object
+          properties:
+            x:
+              type: integer
+              format: int32
+            y:
+              type: integer
+              format: int32
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string 
