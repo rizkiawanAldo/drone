@@ -1,4 +1,4 @@
-.PHONY: init generate build test test-unit run docker-build docker-run clean
+.PHONY: init generate build test test-unit run docker-build docker-run docker-build-single docker-run-single clean
 
 # Variables
 GOPATH := $(shell go env GOPATH)
@@ -7,9 +7,9 @@ OAPI_CODEGEN := $(BIN_DIR)/oapi-codegen
 GENERATED_DIR := ./generated
 SERVER_DIR := ./cmd/server
 SERVER_BINARY := server
+DOCKER_IMAGE := drone-app
 
 init:
-	go mod tidy
 	go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
 	go install github.com/golang/mock/mockgen@latest
 	mkdir -p $(GENERATED_DIR)
@@ -31,11 +31,16 @@ run: build
 	./$(SERVER_BINARY)
 
 docker-build:
-	docker-compose build
+	docker build -t $(DOCKER_IMAGE) .
 
 docker-run:
-	docker-compose up
+	docker run -p 8080:8080 $(DOCKER_IMAGE)
 
 clean:
 	rm -f $(SERVER_BINARY)
 	rm -f coverage.out 
+
+reset:
+	rm -f $(SERVER_BINARY)
+	rm -f coverage.out
+	rm -rf $(GENERATED_DIR)
