@@ -1,0 +1,687 @@
+{
+	"info": {
+		"_postman_id": "a9a5c1e8-3c10-4c2d-8b54-1c6d3d7e8f7a",
+		"name": "Plantation Management API Tests",
+		"description": "A collection of tests for the Plantation Management API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Create Estate",
+			"item": [
+				{
+					"name": "Create Estate - Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Response has estate ID\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.id).to.exist;",
+									"    pm.collectionVariables.set(\"estateId\", jsonData.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"width\": 1000,\n    \"length\": 2000\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/estate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"estate"
+							]
+						},
+						"description": "Creates a new estate with valid dimensions"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Estate - Missing Fields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"width\": 1000\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/estate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"estate"
+							]
+						},
+						"description": "Attempts to create an estate with missing required fields"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Estate - Invalid Dimensions (Too Small)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"width\": 0,\n    \"length\": 2000\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/estate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"estate"
+							]
+						},
+						"description": "Attempts to create an estate with invalid dimensions (too small)"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Estate - Invalid Dimensions (Too Large)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"width\": 1000,\n    \"length\": 60000\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/estate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"estate"
+							]
+						},
+						"description": "Attempts to create an estate with invalid dimensions (too large)"
+					},
+					"response": []
+				}
+			],
+			"description": "Tests for the estate creation endpoint"
+		},
+		{
+			"name": "Add Tree",
+			"item": [
+				{
+					"name": "Add Tree - Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Response has tree ID\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.id).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"x\": 5,\n    \"y\": 10,\n    \"height\": 15\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/estate/{{estateId}}/tree",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"estate",
+								"{{estateId}}",
+								"tree"
+							]
+						},
+						"description": "Adds a tree to an existing estate"
+					},
+					"response": []
+				},
+				{
+					"name": "Add Tree - Missing Fields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"x\": 5,\n    \"y\": 10\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/estate/{{estateId}}/tree",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"estate",
+								"{{estateId}}",
+								"tree"
+							]
+						},
+						"description": "Attempts to add a tree with missing required fields"
+					},
+					"response": []
+				},
+				{
+					"name": "Add Tree - Invalid Coordinates",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"x\": 0,\n    \"y\": 10,\n    \"height\": 15\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/estate/{{estateId}}/tree",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"estate",
+								"{{estateId}}",
+								"tree"
+							]
+						},
+						"description": "Attempts to add a tree with invalid coordinates"
+					},
+					"response": []
+				},
+				{
+					"name": "Add Tree - Invalid Height",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"x\": 5,\n    \"y\": 10,\n    \"height\": 40\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/estate/{{estateId}}/tree",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"estate",
+								"{{estateId}}",
+								"tree"
+							]
+						},
+						"description": "Attempts to add a tree with an invalid height (over maximum)"
+					},
+					"response": []
+				},
+				{
+					"name": "Add Tree - Estate Not Found",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"x\": 5,\n    \"y\": 10,\n    \"height\": 15\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/estate/11111111-1111-1111-1111-111111111111/tree",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"estate",
+								"11111111-1111-1111-1111-111111111111",
+								"tree"
+							]
+						},
+						"description": "Attempts to add a tree to a non-existent estate"
+					},
+					"response": []
+				}
+			],
+			"description": "Tests for the tree creation endpoint"
+		},
+		{
+			"name": "Get Estate Stats",
+			"item": [
+				{
+					"name": "Get Estate Stats - Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has stats fields\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.count).to.exist;",
+									"    pm.expect(jsonData.max_height).to.exist;",
+									"    pm.expect(jsonData.min_height).to.exist;",
+									"    pm.expect(jsonData.median_height).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/estate/{{estateId}}/stats",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"estate",
+								"{{estateId}}",
+								"stats"
+							]
+						},
+						"description": "Gets tree statistics for an existing estate"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Estate Stats - Estate Not Found",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/estate/11111111-1111-1111-1111-111111111111/stats",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"estate",
+								"11111111-1111-1111-1111-111111111111",
+								"stats"
+							]
+						},
+						"description": "Attempts to get statistics for a non-existent estate"
+					},
+					"response": []
+				}
+			],
+			"description": "Tests for the estate statistics endpoint"
+		},
+		{
+			"name": "Get Drone Plan",
+			"item": [
+				{
+					"name": "Get Drone Plan - Success (No Max Distance)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has distance\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.distance).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/estate/{{estateId}}/drone-plan",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"estate",
+								"{{estateId}}",
+								"drone-plan"
+							]
+						},
+						"description": "Gets a drone plan for an existing estate without max distance"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Drone Plan - Success (With Max Distance)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has distance and rest coordinates\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.distance).to.exist;",
+									"    pm.expect(jsonData.rest).to.exist;",
+									"    pm.expect(jsonData.rest.x).to.exist;",
+									"    pm.expect(jsonData.rest.y).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/estate/{{estateId}}/drone-plan?max_distance=50",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"estate",
+								"{{estateId}}",
+								"drone-plan"
+							],
+							"query": [
+								{
+									"key": "max_distance",
+									"value": "50"
+								}
+							]
+						},
+						"description": "Gets a drone plan for an existing estate with max distance specified"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Drone Plan - Invalid Max Distance",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/estate/{{estateId}}/drone-plan?max_distance=0",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"estate",
+								"{{estateId}}",
+								"drone-plan"
+							],
+							"query": [
+								{
+									"key": "max_distance",
+									"value": "0"
+								}
+							]
+						},
+						"description": "Attempts to get a drone plan with an invalid max distance"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Drone Plan - Estate Not Found",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/estate/11111111-1111-1111-1111-111111111111/drone-plan",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"estate",
+								"11111111-1111-1111-1111-111111111111",
+								"drone-plan"
+							]
+						},
+						"description": "Attempts to get a drone plan for a non-existent estate"
+					},
+					"response": []
+				}
+			],
+			"description": "Tests for the drone plan endpoint"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "estateId",
+			"value": "",
+			"type": "string"
+		}
+	]
+} 

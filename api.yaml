@@ -8,6 +8,18 @@ servers:
     description: Local development server
 paths:
   /estate:
+    get:
+      summary: List all estates
+      operationId: listEstates
+      responses:
+        '200':
+          description: Successfully retrieved list of estates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EstateListItem'
     post:
       summary: Create a new estate
       operationId: createEstate
@@ -151,6 +163,18 @@ components:
         id:
           type: string
           format: uuid
+    EstateListItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        width:
+          type: integer
+          format: int32
+        length:
+          type: integer
+          format: int32
     TreeRequest:
       type: object
       required:

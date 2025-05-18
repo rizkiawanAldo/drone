@@ -14,6 +14,7 @@ import (
 	"drone/internal/api"
 	"drone/internal/config"
 	"drone/internal/repository"
+	"drone/internal/service"
 )
 
 func main() {
@@ -33,8 +34,11 @@ func main() {
 	// Initialize repository
 	repo := repository.NewRepository(dbPool)
 
-	// Initialize API handler
-	handler := api.NewHandler(repo)
+	// Initialize service with repository
+	svc := service.NewService(repo)
+
+	// Initialize API handler with service
+	handler := api.NewHandler(svc)
 
 	// Set up Echo server
 	e := echo.New()

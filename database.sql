@@ -17,8 +17,7 @@ CREATE TABLE IF NOT EXISTS trees (
     y INTEGER NOT NULL CHECK (y >= 1),
     height INTEGER NOT NULL CHECK (height BETWEEN 1 AND 30),
     created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
-    -- Ensure tree coordinates are valid for the estate dimensions
-    CONSTRAINT valid_coordinates CHECK (x <= (SELECT width FROM estates WHERE id = estate_id) AND y <= (SELECT length FROM estates WHERE id = estate_id)),
+    -- Coordinate validation will be handled at application level
     -- Ensure only one tree per plot
     UNIQUE (estate_id, x, y)
 ); 

@@ -12,10 +12,18 @@ type Repository interface {
 	// Estate methods
 	CreateEstate(ctx context.Context, width, length int) (uuid.UUID, error)
 	GetEstate(ctx context.Context, id uuid.UUID) (width, length int, err error)
+	ListEstates(ctx context.Context) ([]Estate, error)
 	
 	// Tree methods
 	CreateTree(ctx context.Context, estateID uuid.UUID, x, y, height int) (uuid.UUID, error)
 	GetTrees(ctx context.Context, estateID uuid.UUID) ([]Tree, error)
+}
+
+// Estate represents an estate in the database
+type Estate struct {
+	ID     uuid.UUID
+	Width  int
+	Length int
 }
 
 // Tree represents a tree in the database
@@ -97,4 +105,28 @@ func (r *repository) GetTrees(ctx context.Context, estateID uuid.UUID) ([]Tree, 
 	}
 
 	return trees, nil
+}
+
+// ListEstates retrieves all estates from the database
+func (r *repository) ListEstates(ctx context.Context) ([]Estate, error) {
+	rows, err := r.db.Query(ctx, "SELECT id, width, length FROM estates")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var estates []Estate
+	for rows.Next() {
+		var estate Estate
+		if err := rows.Scan(&estate.ID, &estate.Width, &estate.Length); err != nil {
+			return nil, err
+		}
+		estates = append(estates, estate)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return estates, nil
 } 
