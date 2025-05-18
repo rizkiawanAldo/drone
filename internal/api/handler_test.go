@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -16,23 +15,22 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"drone/generated"
-	"drone/internal/repository"
-	"drone/internal/repository/mocks"
+	"drone/internal/service/mocks"
 )
 
 func TestCreateEstate(t *testing.T) {
 	testCases := []struct {
 		name           string
 		requestBody    string
-		mockSetup      func(*mocks.MockRepository)
+		mockSetup      func(*mocks.MockService)
 		expectedStatus int
 		checkResponse  func(t *testing.T, rec *httptest.ResponseRecorder)
 	}{
 		{
 			name:        "Success",
 			requestBody: `{"width": 1000, "length": 2000}`,
-			mockSetup: func(mockRepo *mocks.MockRepository) {
-				mockRepo.EXPECT().
+			mockSetup: func(mockSvc *mocks.MockService) {
+				mockSvc.EXPECT().
 					CreateEstate(gomock.Any(), 1000, 2000).
 					Return(uuid.New(), nil)
 			},
@@ -47,30 +45,42 @@ func TestCreateEstate(t *testing.T) {
 		{
 			name:        "Invalid Request - Missing Fields",
 			requestBody: `{"width": 1000}`,
-			mockSetup:   func(mockRepo *mocks.MockRepository) {},
+			mockSetup: func(mockSvc *mocks.MockService) {
+				mockSvc.EXPECT().
+					CreateEstate(gomock.Any(), 1000, 0).
+					Return(uuid.UUID{}, errors.New("invalid estate dimensions"))
+			},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
 			name:        "Invalid Request - Invalid Width",
 			requestBody: `{"width": 0, "length": 2000}`,
-			mockSetup:   func(mockRepo *mocks.MockRepository) {},
+			mockSetup: func(mockSvc *mocks.MockService) {
+				mockSvc.EXPECT().
+					CreateEstate(gomock.Any(), 0, 2000).
+					Return(uuid.UUID{}, errors.New("invalid estate dimensions"))
+			},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
 			name:        "Invalid Request - Invalid Length",
 			requestBody: `{"width": 1000, "length": 60000}`,
-			mockSetup:   func(mockRepo *mocks.MockRepository) {},
+			mockSetup: func(mockSvc *mocks.MockService) {
+				mockSvc.EXPECT().
+					CreateEstate(gomock.Any(), 1000, 60000).
+					Return(uuid.UUID{}, errors.New("invalid estate dimensions"))
+			},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
 			name:        "Repository Error",
 			requestBody: `{"width": 1000, "length": 2000}`,
-			mockSetup: func(mockRepo *mocks.MockRepository) {
-				mockRepo.EXPECT().
+			mockSetup: func(mockSvc *mocks.MockService) {
+				mockSvc.EXPECT().
 					CreateEstate(gomock.Any(), 1000, 2000).
 					Return(uuid.UUID{}, errors.New("database error"))
 			},
-			expectedStatus: http.StatusInternalServerError,
+			expectedStatus: http.StatusBadRequest,
 		},
 	}
 
@@ -89,14 +99,14 @@ func TestCreateEstate(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			
-			// Create mock repository
-			mockRepo := mocks.NewMockRepository(ctrl)
+			// Create mock service
+			mockSvc := mocks.NewMockService(ctrl)
 			
 			// Setup mock expectations
-			tc.mockSetup(mockRepo)
+			tc.mockSetup(mockSvc)
 			
-			// Create handler with mock repository
-			h := NewHandler(mockRepo)
+			// Create handler with mock service
+			h := NewHandler(mockSvc)
 			
 			// Perform the test
 			_ = h.CreateEstate(c)
@@ -120,18 +130,15 @@ func TestCreateTree(t *testing.T) {
 	testCases := []struct {
 		name           string
 		requestBody    string
-		mockSetup      func(*mocks.MockRepository)
+		mockSetup      func(*mocks.MockService)
 		expectedStatus int
 		checkResponse  func(t *testing.T, rec *httptest.ResponseRecorder)
 	}{
 		{
 			name:        "Success",
 			requestBody: `{"x": 5, "y": 10, "height": 15}`,
-			mockSetup: func(mockRepo *mocks.MockRepository) {
-				mockRepo.EXPECT().
-					GetEstate(gomock.Any(), estateID).
-					Return(100, 100, nil)
-				mockRepo.EXPECT().
+			mockSetup: func(mockSvc *mocks.MockService) {
+				mockSvc.EXPECT().
 					CreateTree(gomock.Any(), estateID, 5, 10, 15).
 					Return(uuid.New(), nil)
 			},
@@ -146,59 +153,72 @@ func TestCreateTree(t *testing.T) {
 		{
 			name:        "Invalid Request - Missing Fields",
 			requestBody: `{"x": 5, "y": 10}`,
-			mockSetup:   func(mockRepo *mocks.MockRepository) {},
+			mockSetup: func(mockSvc *mocks.MockService) {
+				mockSvc.EXPECT().
+					CreateTree(gomock.Any(), gomock.Any(), 5, 10, 0).
+					Return(uuid.UUID{}, errors.New("invalid tree height"))
+			},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
 			name:        "Invalid Request - Invalid X",
 			requestBody: `{"x": 0, "y": 10, "height": 15}`,
-			mockSetup:   func(mockRepo *mocks.MockRepository) {},
+			mockSetup: func(mockSvc *mocks.MockService) {
+				mockSvc.EXPECT().
+					CreateTree(gomock.Any(), estateID, 0, 10, 15).
+					Return(uuid.UUID{}, errors.New("tree coordinates outside estate boundaries"))
+			},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
 			name:        "Invalid Request - Invalid Y",
 			requestBody: `{"x": 5, "y": 0, "height": 15}`,
-			mockSetup:   func(mockRepo *mocks.MockRepository) {},
+			mockSetup: func(mockSvc *mocks.MockService) {
+				mockSvc.EXPECT().
+					CreateTree(gomock.Any(), estateID, 5, 0, 15).
+					Return(uuid.UUID{}, errors.New("tree coordinates outside estate boundaries"))
+			},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
 			name:        "Invalid Request - Invalid Height",
 			requestBody: `{"x": 5, "y": 10, "height": 40}`,
-			mockSetup:   func(mockRepo *mocks.MockRepository) {},
+			mockSetup: func(mockSvc *mocks.MockService) {
+				mockSvc.EXPECT().
+					CreateTree(gomock.Any(), estateID, 5, 10, 40).
+					Return(uuid.UUID{}, errors.New("invalid tree height"))
+			},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
 			name:        "Estate Not Found",
 			requestBody: `{"x": 5, "y": 10, "height": 15}`,
-			mockSetup: func(mockRepo *mocks.MockRepository) {
-				mockRepo.EXPECT().
-					GetEstate(gomock.Any(), estateID).
-					Return(0, 0, errors.New("estate not found"))
+			mockSetup: func(mockSvc *mocks.MockService) {
+				mockSvc.EXPECT().
+					CreateTree(gomock.Any(), estateID, 5, 10, 15).
+					Return(uuid.UUID{}, errors.New("estate not found"))
 			},
 			expectedStatus: http.StatusNotFound,
 		},
 		{
 			name:        "Tree Out of Bounds",
 			requestBody: `{"x": 200, "y": 10, "height": 15}`,
-			mockSetup: func(mockRepo *mocks.MockRepository) {
-				mockRepo.EXPECT().
-					GetEstate(gomock.Any(), estateID).
-					Return(100, 100, nil)
+			mockSetup: func(mockSvc *mocks.MockService) {
+				mockSvc.EXPECT().
+					CreateTree(gomock.Any(), estateID, 200, 10, 15).
+					Return(uuid.UUID{}, errors.New("tree coordinates outside estate boundaries"))
 			},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
 			name:        "Repository Error",
 			requestBody: `{"x": 5, "y": 10, "height": 15}`,
-			mockSetup: func(mockRepo *mocks.MockRepository) {
-				mockRepo.EXPECT().
-					GetEstate(gomock.Any(), estateID).
-					Return(100, 100, nil)
-				mockRepo.EXPECT().
+			mockSetup: func(mockSvc *mocks.MockService) {
+				mockSvc.EXPECT().
 					CreateTree(gomock.Any(), estateID, 5, 10, 15).
 					Return(uuid.UUID{}, errors.New("database error"))
 			},
-			expectedStatus: http.StatusInternalServerError,
+			expectedStatus: http.StatusBadRequest,
 		},
 	}
 
@@ -219,14 +239,14 @@ func TestCreateTree(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			
-			// Create mock repository
-			mockRepo := mocks.NewMockRepository(ctrl)
+			// Create mock service
+			mockSvc := mocks.NewMockService(ctrl)
 			
 			// Setup mock expectations
-			tc.mockSetup(mockRepo)
+			tc.mockSetup(mockSvc)
 			
-			// Create handler with mock repository
-			h := NewHandler(mockRepo)
+			// Create handler with mock service
+			h := NewHandler(mockSvc)
 			
 			// Perform the test
 			_ = h.CreateTree(c, estateUUID)
@@ -246,27 +266,18 @@ func TestGetEstateStats(t *testing.T) {
 	estateID := uuid.New()
 	estateUUID := openapi_types.UUID(estateID)
 
-	trees := []repository.Tree{
-		{ID: uuid.New(), EstateID: estateID, X: 5, Y: 10, Height: 10},
-		{ID: uuid.New(), EstateID: estateID, X: 15, Y: 20, Height: 15},
-		{ID: uuid.New(), EstateID: estateID, X: 25, Y: 30, Height: 20},
-	}
-
 	testCases := []struct {
 		name           string
-		mockSetup      func(*mocks.MockRepository)
+		mockSetup      func(*mocks.MockService)
 		expectedStatus int
 		checkResponse  func(t *testing.T, rec *httptest.ResponseRecorder)
 	}{
 		{
 			name: "Success",
-			mockSetup: func(mockRepo *mocks.MockRepository) {
-				mockRepo.EXPECT().
-					GetEstate(gomock.Any(), estateID).
-					Return(100, 100, nil)
-				mockRepo.EXPECT().
-					GetTrees(gomock.Any(), estateID).
-					Return(trees, nil)
+			mockSetup: func(mockSvc *mocks.MockService) {
+				mockSvc.EXPECT().
+					GetTreeStats(gomock.Any(), estateID).
+					Return(3, 20, 10, 15, nil)
 			},
 			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, rec *httptest.ResponseRecorder) {
@@ -281,13 +292,10 @@ func TestGetEstateStats(t *testing.T) {
 		},
 		{
 			name: "Success - No Trees",
-			mockSetup: func(mockRepo *mocks.MockRepository) {
-				mockRepo.EXPECT().
-					GetEstate(gomock.Any(), estateID).
-					Return(100, 100, nil)
-				mockRepo.EXPECT().
-					GetTrees(gomock.Any(), estateID).
-					Return([]repository.Tree{}, nil)
+			mockSetup: func(mockSvc *mocks.MockService) {
+				mockSvc.EXPECT().
+					GetTreeStats(gomock.Any(), estateID).
+					Return(0, 0, 0, 0, nil)
 			},
 			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, rec *httptest.ResponseRecorder) {
@@ -302,22 +310,19 @@ func TestGetEstateStats(t *testing.T) {
 		},
 		{
 			name: "Estate Not Found",
-			mockSetup: func(mockRepo *mocks.MockRepository) {
-				mockRepo.EXPECT().
-					GetEstate(gomock.Any(), estateID).
-					Return(0, 0, errors.New("estate not found"))
+			mockSetup: func(mockSvc *mocks.MockService) {
+				mockSvc.EXPECT().
+					GetTreeStats(gomock.Any(), estateID).
+					Return(0, 0, 0, 0, errors.New("estate not found"))
 			},
 			expectedStatus: http.StatusNotFound,
 		},
 		{
 			name: "Repository Error",
-			mockSetup: func(mockRepo *mocks.MockRepository) {
-				mockRepo.EXPECT().
-					GetEstate(gomock.Any(), estateID).
-					Return(100, 100, nil)
-				mockRepo.EXPECT().
-					GetTrees(gomock.Any(), estateID).
-					Return(nil, errors.New("database error"))
+			mockSetup: func(mockSvc *mocks.MockService) {
+				mockSvc.EXPECT().
+					GetTreeStats(gomock.Any(), estateID).
+					Return(0, 0, 0, 0, errors.New("database error"))
 			},
 			expectedStatus: http.StatusInternalServerError,
 		},
@@ -339,14 +344,14 @@ func TestGetEstateStats(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			
-			// Create mock repository
-			mockRepo := mocks.NewMockRepository(ctrl)
+			// Create mock service
+			mockSvc := mocks.NewMockService(ctrl)
 			
 			// Setup mock expectations
-			tc.mockSetup(mockRepo)
+			tc.mockSetup(mockSvc)
 			
-			// Create handler with mock repository
-			h := NewHandler(mockRepo)
+			// Create handler with mock service
+			h := NewHandler(mockSvc)
 			
 			// Perform the test
 			_ = h.GetEstateStats(c, estateUUID)
@@ -366,28 +371,19 @@ func TestGetDronePlan(t *testing.T) {
 	estateID := uuid.New()
 	estateUUID := openapi_types.UUID(estateID)
 
-	trees := []repository.Tree{
-		{ID: uuid.New(), EstateID: estateID, X: 5, Y: 10, Height: 10},
-		{ID: uuid.New(), EstateID: estateID, X: 15, Y: 20, Height: 15},
-		{ID: uuid.New(), EstateID: estateID, X: 25, Y: 30, Height: 20},
-	}
-
 	testCases := []struct {
 		name           string
 		maxDistance    *int32
-		mockSetup      func(*mocks.MockRepository)
+		mockSetup      func(*mocks.MockService)
 		expectedStatus int
 		checkResponse  func(t *testing.T, rec *httptest.ResponseRecorder)
 	}{
 		{
 			name: "Success - No Max Distance",
-			mockSetup: func(mockRepo *mocks.MockRepository) {
-				mockRepo.EXPECT().
-					GetEstate(gomock.Any(), estateID).
-					Return(100, 100, nil)
-				mockRepo.EXPECT().
-					GetTrees(gomock.Any(), estateID).
-					Return(trees, nil)
+			mockSetup: func(mockSvc *mocks.MockService) {
+				mockSvc.EXPECT().
+					CalculateDronePath(gomock.Any(), estateID).
+					Return(120, nil)
 			},
 			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, rec *httptest.ResponseRecorder) {
@@ -401,13 +397,10 @@ func TestGetDronePlan(t *testing.T) {
 		{
 			name: "Success - With Max Distance",
 			maxDistance: func() *int32 { val := int32(50); return &val }(),
-			mockSetup: func(mockRepo *mocks.MockRepository) {
-				mockRepo.EXPECT().
-					GetEstate(gomock.Any(), estateID).
-					Return(100, 100, nil)
-				mockRepo.EXPECT().
-					GetTrees(gomock.Any(), estateID).
-					Return(trees, nil)
+			mockSetup: func(mockSvc *mocks.MockService) {
+				mockSvc.EXPECT().
+					CalculateDronePathWithRest(gomock.Any(), estateID, 50).
+					Return(50, 25, 30, nil)
 			},
 			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, rec *httptest.ResponseRecorder) {
@@ -423,27 +416,24 @@ func TestGetDronePlan(t *testing.T) {
 		{
 			name: "Invalid Max Distance",
 			maxDistance: func() *int32 { val := int32(0); return &val }(),
-			mockSetup: func(mockRepo *mocks.MockRepository) {},
+			mockSetup: func(mockSvc *mocks.MockService) {},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
 			name: "Estate Not Found",
-			mockSetup: func(mockRepo *mocks.MockRepository) {
-				mockRepo.EXPECT().
-					GetEstate(gomock.Any(), estateID).
-					Return(0, 0, errors.New("estate not found"))
+			mockSetup: func(mockSvc *mocks.MockService) {
+				mockSvc.EXPECT().
+					CalculateDronePath(gomock.Any(), estateID).
+					Return(0, errors.New("estate not found"))
 			},
 			expectedStatus: http.StatusNotFound,
 		},
 		{
 			name: "Repository Error",
-			mockSetup: func(mockRepo *mocks.MockRepository) {
-				mockRepo.EXPECT().
-					GetEstate(gomock.Any(), estateID).
-					Return(100, 100, nil)
-				mockRepo.EXPECT().
-					GetTrees(gomock.Any(), estateID).
-					Return(nil, errors.New("database error"))
+			mockSetup: func(mockSvc *mocks.MockService) {
+				mockSvc.EXPECT().
+					CalculateDronePath(gomock.Any(), estateID).
+					Return(0, errors.New("database error"))
 			},
 			expectedStatus: http.StatusInternalServerError,
 		},
@@ -457,7 +447,7 @@ func TestGetDronePlan(t *testing.T) {
 			// Setup test request
 			path := "/estate/" + estateID.String() + "/drone-plan"
 			if tc.maxDistance != nil {
-				path += "?max_distance=" + string(*tc.maxDistance)
+				path += "?max_distance=" + string(rune(*tc.maxDistance+'0'))
 			}
 			
 			req := httptest.NewRequest(http.MethodGet, path, nil)
@@ -470,14 +460,14 @@ func TestGetDronePlan(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			
-			// Create mock repository
-			mockRepo := mocks.NewMockRepository(ctrl)
+			// Create mock service
+			mockSvc := mocks.NewMockService(ctrl)
 			
 			// Setup mock expectations
-			tc.mockSetup(mockRepo)
+			tc.mockSetup(mockSvc)
 			
-			// Create handler with mock repository
-			h := NewHandler(mockRepo)
+			// Create handler with mock service
+			h := NewHandler(mockSvc)
 			
 			// Prepare params
 			params := generated.GetDronePlanParams{
@@ -511,11 +501,11 @@ func TestPing(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	
-	// Create mock repository
-	mockRepo := mocks.NewMockRepository(ctrl)
+	// Create mock service
+	mockSvc := mocks.NewMockService(ctrl)
 	
-	// Create handler with mock repository
-	h := NewHandler(mockRepo)
+	// Create handler with mock service
+	h := NewHandler(mockSvc)
 	
 	// Perform the test
 	err := h.Ping(c)
